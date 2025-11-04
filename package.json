@@ -1,0 +1,67 @@
+{
+  "name": "agent-mandates-demo",
+  "version": "0.0.1-beta",
+  "description": "This repo demonsitrate how agents communicate each other with a mandate",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "setup": "npx tsx scripts/setup.ts",
+    "test:mandates": "npx tsx src/agent/mandateDemo",
+    "demo": "npx tsx demo.ts",
+    "revoke-installations": "npx tsx scripts/revokeInstalaltions.ts",
+    "client-agent": "npx tsx src/agent/clientAgent.ts",
+    "server-agent": "npx tsx src/agent/serverAgent.ts",
+    "agent-validator": "npx tsx src/agent/validatorAgent.ts",
+    "test-validation": "npx tsx scripts/testValidationResponse.ts",
+    "test-feedback": "npx tsx scripts/testFeedback.ts",
+    "test-swap": "npx tsx scripts/testSwap.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quillai-network/Agent-Mandates-Demo.git"
+  },
+  "keywords": [
+    "Intent",
+    "A2A",
+    "ERC-8004",
+    "x402",
+    "XMTP"
+  ],
+  "author": "QuillAINetwork",
+  "contributors": [
+    {
+      "name": "Akshat Mishra",
+      "url": "https://github.com/Akshat-Mishra101"
+    },
+    {
+      "name": "Akshay Dev H",
+      "url": "https://github.com/akshaydevh"
+    }
+  ],
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/quillai-network/Agent-Mandates-Demo/issues"
+  },
+  "homepage": "https://github.com/quillai-network/Agent-Mandates-Demo#readme",
+  "dependencies": {
+    "@chaoschain/sdk": "^0.1.2",
+    "@uniswap/sdk-core": "^7.8.0",
+    "@uniswap/v3-sdk": "^3.26.0",
+    "@xmtp/agent-sdk": "^1.1.9",
+    "axios": "^1.13.0",
+    "canonicalize": "^2.1.0",
+    "chalk": "^5.6.2",
+    "dotenv": "^17.2.3",
+    "ethers": "^6.15.0",
+    "form-data": "^4.0.0",
+    "ora": "^9.0.0",
+    "ulid": "^3.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.1",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}
