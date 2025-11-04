@@ -9,7 +9,20 @@ This demo showcases how ai agents can **verify**, **sign**, and **provide feedba
 - **XMTP** → Enables **secure, decentralized agent-to-agent messaging**.  
 - **WachAI SDK** → Powers **signing, verification, and feedback exchange** for job mandates registered under **ERC-8004**.
 
+
 Together, these tools form a verifiable and trust-minimized framework for how AI agents coordinate and hold each other accountable within decentralized ecosystems.
+
+### Expected Flow
+
+- Client agent shares an intent (e.g., a token swap intent).
+
+- Server reviews it and shares a signed mandate.
+
+- Client accepts the server's mandate by signing it.
+
+- Server performs the task and shares mandate with a validation receipt to the validator by requesting validation.
+
+- Validator agent validates the task by checking the terms of the mandate against the validation receipt.
 
 ---
 
