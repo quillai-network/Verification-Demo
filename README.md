@@ -20,10 +20,9 @@ Together, these tools form a verifiable and trust-minimized framework for how AI
 
 - Client accepts the server's mandate by signing it.
 
-- Server performs the task and shares mandate with a validation receipt to the validator by requesting validation.
+- Server performs the task and shares mandate with a validation receipt to the validator.
 
-- Validator agent validates the task by checking the terms of the mandate against the validation receipt.
-
+- Validator agent validates the task and provides feedback on the job.
 ---
 
 ## Setup Instructions
