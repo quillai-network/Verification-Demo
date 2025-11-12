@@ -17,8 +17,9 @@ import {
 import { UniswapV3Manager } from '../services/uniswap/uniswapV3';
 import { UNISWAP_CFG } from '../services/uniswap/uniswap.config';
 import { CustomPinataService } from '../services/customPinataService';
-import { Mandate, caip10, addrFromCaip10 } from '../core/mandate';
-import { SwapCore, SwapPayload } from '../../types/mandate';
+import { Mandate, caip10 } from '@quillai-network/mandates-core';
+import { swapV1, type SwapV1Core, type SwapV1Payload } from '@quillai-network/primitives';
+import { existsSync, mkdirSync } from 'fs';
 
 dotenv.config();
 
@@ -80,6 +81,10 @@ class ServerAgent {
       // Initialize XMTP Agent (using same private key as Chaos SDK)
       const user = createUser(this.config.privateKey as `0x${string}`);
       const signer = createSigner(user);
+      const dbDir = `${process.cwd()}/db`;
+      if (!existsSync(dbDir)) {
+        mkdirSync(dbDir, { recursive: true });
+      }
 
       this.xmtpAgent = await Agent.create(signer, {
         env: this.config.network === 'sepolia' ? 'dev' : 'production',
@@ -209,7 +214,7 @@ class ServerAgent {
       const chainId = request.network === 'sepolia' ? 11155111 : 1;
 
       // Create swap payload for mandate core
-      const swapPayload: SwapPayload = {
+      const swapPayload: SwapV1Payload = {
         chainId,
         tokenIn: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC on mainnet (adjust for sepolia if needed)
         tokenOut: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', // WBTC (adjust as needed)
@@ -218,6 +223,7 @@ class ServerAgent {
         recipient: clientAddress,
         deadline: new Date(Date.now() + 15 * 60 * 1000).toISOString() // 15 minutes
       };
+      const swapCore = swapV1.core(swapPayload);
 
       // Create mandate
       const mandate = new Mandate({
@@ -226,10 +232,7 @@ class ServerAgent {
         server: caip10(chainId, serverAddress),
         deadline: new Date(Date.now() + 20 * 60 * 1000).toISOString(), // 20 minutes
         intent: `Swap ${request.amount} ${request.fromToken} for ${request.toToken} on ${request.network}`,
-        core: {
-          kind: 'swap@1',
-          payload: swapPayload
-        } as SwapCore
+        core: swapCore
       });
 
       // Sign as server
@@ -265,8 +268,8 @@ class ServerAgent {
     console.log('')
     try {
       // Extract swap details from mandate core
-      const core = mandateJson.core as SwapCore;
-      if (!core || core.kind !== 'swap@1') {
+      const core = mandateJson.core as SwapV1Core;
+      if (!core || core.kind !== swapV1.kind) {
         throw new Error('Invalid mandate core: expected swap@1');
       }
       spinner.succeed('Swap execution started');

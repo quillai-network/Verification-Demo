@@ -7,6 +7,7 @@ import { CustomPinataService } from '../services/customPinataService';
 import { verifyMandateAsThirdParty } from './verifier/thirdParty';
 import { UniswapV3Manager, SwapValidationResult } from '../services/uniswap/uniswapV3';
 import { UNISWAP_CFG } from '../services/uniswap/uniswap.config';
+import { swapV1 } from '@quillai-network/primitives';
 
 dotenv.config();
 
@@ -117,7 +118,7 @@ class ValidatorAgent {
         
         // Verify mandate as third party
         const verificationResult = verifyMandateAsThirdParty(mandateJson, {
-          primitive: 'swap@1',
+          primitive: swapV1.kind,
           // Optional: add requireClient/requireServer if needed
         });
         
@@ -157,7 +158,7 @@ class ValidatorAgent {
             
             if (proofData && proofData.txHash) {
               const core = mandateJson.core;
-              if (core && core.kind === 'swap@1') {
+              if (core && core.kind === swapV1.kind) {
                 const payload = core.payload;
                 const swapDetails = proofData.swapDetails || validationRequestData.swapDetails;
                 

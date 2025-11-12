@@ -1,18 +1,16 @@
 // examples/ab-flow.ts
 import { Wallet } from "ethers";
-import { Mandate, addrFromCaip10, caip10 } from "../core/mandate";
+import { Mandate, addrFromCaip10, caip10 } from "@quillai-network/mandates-core";
+import { swapV1, type SwapV1Core, type SwapV1Payload } from "@quillai-network/primitives";
 
 type Intent = { text: string };
-import { SwapCore, SwapPayload } from "types/mandate";
-
-
 import { verifyMandateAsThirdParty } from "./verifier/thirdParty";
 
-function isSwapCore(x: unknown): x is SwapCore {
+function isSwapCore(x: unknown): x is SwapV1Core {
     const o = x as any;
     return (
       o &&
-      o.kind === "swap@1" &&
+      o.kind === swapV1.kind &&
       o.payload &&
       typeof o.payload.amountIn === "string"
     );
@@ -27,24 +25,23 @@ async function main() {
   const intent: Intent = { text: "Swap 100 USDC for WBTC on Ethereum mainnet." };
 
   // Step 2: B creates the mandate + core + signs as server
+  const swapPayload: SwapV1Payload = {
+    chainId: 1,
+    tokenIn: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC
+    tokenOut: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", // WBTC
+    amountIn: "100000000", // 100 USDC (6 decimals)
+    minOut: "165000",      // ~0.00165 WBTC (example)
+    recipient: agentA.address,
+    deadline: new Date(Date.now() + 15 * 60 * 1000).toISOString()
+  };
+
   const mandateFromB = new Mandate({
     version: "0.1.0",
     client: caip10(1, agentA.address), // A is the client
     server: caip10(1, agentB.address), // B is the server
     deadline: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
     intent: intent.text,
-    core: {
-      kind: "swap@1",
-      payload: {
-        chainId: 1,
-        tokenIn: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC
-        tokenOut: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", // WBTC
-        amountIn: "100000000", // 100 USDC (6 decimals)
-        minOut: "165000",      // ~0.00165 WBTC (example)
-        recipient: agentA.address,
-        deadline: new Date(Date.now() + 15 * 60 * 1000).toISOString()
-      }
-    }
+    core: swapV1.core(swapPayload)
   });
   await mandateFromB.signAsServer(agentB, "eip191");
 
@@ -91,7 +88,7 @@ if (!ok) throw new Error("terms not acceptable");
       // optional assertions:
       requireClient: addrFromCaip10(countersigned.client),
       requireServer: addrFromCaip10(countersigned.server),
-      primitive: "swap@1",
+      primitive: swapV1.kind,
       // eip712ClientDomain: { name: "Mandate", version: "1", chainId: 1 },
       // eip712ServerDomain: { name: "Mandate", version: "1", chainId: 1 },
     });

@@ -46,6 +46,8 @@
   "homepage": "https://github.com/quillai-network/Agent-Mandates-Demo#readme",
   "dependencies": {
     "@chaoschain/sdk": "^0.1.2",
+    "@quillai-network/mandates-core": "^0.1.1",
+    "@quillai-network/primitives": "^0.1.1",
     "@uniswap/sdk-core": "^7.8.0",
     "@uniswap/v3-sdk": "^3.26.0",
     "@xmtp/agent-sdk": "^1.1.9",

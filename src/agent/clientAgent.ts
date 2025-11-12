@@ -16,8 +16,9 @@ import {
   AgentConfig 
 } from '../../types/index';
 import { CustomPinataService } from '../services/customPinataService';
-import { Mandate, addrFromCaip10 } from '../core/mandate';
-import { SwapCore, SwapPayload } from '../../types/mandate';
+import { Mandate } from '@quillai-network/mandates-core';
+import { swapV1, type SwapV1Core } from '@quillai-network/primitives';
+import { existsSync, mkdirSync } from 'fs';
 
 dotenv.config();
 
@@ -60,6 +61,10 @@ class ClientAgent {
       // Initialize XMTP Agent (using same private key as Chaos SDK)
       const user = createUser(this.config.privateKey as `0x${string}`);
       const signer = createSigner(user);
+      const dbDir = `${process.cwd()}/db`;
+      if (!existsSync(dbDir)) {
+        mkdirSync(dbDir, { recursive: true });
+      }
       
       this.xmtpAgent = await Agent.create(signer, {
         env: this.config.network === 'sepolia' ? 'dev' : 'production',
@@ -120,8 +125,7 @@ class ClientAgent {
       console.log(chalk.gray(`   Intent: ${mandateJson.intent}`));
       console.log(chalk.gray(`   Deadline: ${mandateJson.deadline}`));
       
-      // Perform local checks on terms (similar to mandateDemo.ts)
-      const core = mandateJson.core;
+      const core = mandateJson.core as SwapV1Core;
       if (!this.isSwapCore(core)) {
         throw new Error('unexpected core shape for swap@1');
       }
@@ -137,10 +141,9 @@ class ClientAgent {
       
       spinner.succeed('Mandate verified successfully!');
       
-      // Automatically accept and sign as client
-      setTimeout(async () => {
-        await this.countersignMandate(mandateJson.mandateId, ctx);
-      }, 2000);
+      // Automatically accept and sign as client after brief pause
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      await this.countersignMandate(mandateJson.mandateId, ctx);
       
     } catch (error) {
       spinner.fail('Failed to verify mandate');
@@ -187,12 +190,12 @@ class ClientAgent {
     }
   }
 
-  // Helper function to check if core is SwapCore (from mandateDemo.ts)
-  private isSwapCore(x: unknown): x is SwapCore {
+  // Helper function to check if core is SwapV1Core (from mandateDemo.ts)
+  private isSwapCore(x: unknown): x is SwapV1Core {
     const o = x as any;
     return (
       o &&
-      o.kind === "swap@1" &&
+      o.kind === swapV1.kind &&
       o.payload &&
       typeof o.payload.amountIn === "string"
     );
@@ -210,11 +213,14 @@ class ClientAgent {
     await this.submitFeedback(execution);
   }
 
-  async requestSwap(agentBAddress: string): Promise<void> {
+  async requestSwap(agentAddress: string): Promise<void> {
     const spinner = ora('Requesting swap from Server Agent...').start();
     console.log('')
     try {
       const walletAddress = new ethers.Wallet(this.config.privateKey).address;
+      if (!agentAddress) {
+        throw new Error('Server agent XMTP address is required (set SERVER_AGENT_ADDRESS)');
+      }
       const swapRequest: SwapRequest = {
         id: `swap_${Date.now()}`,
         fromToken: 'USDC',
@@ -226,7 +232,7 @@ class ClientAgent {
       };
 
       // Create DM with Server Agent
-      const dm = await this.xmtpAgent.createDmWithAddress(agentBAddress as `0x${string}`);
+      const dm = await this.xmtpAgent.createDmWithAddress(agentAddress as `0x${string}`);
 
       // Send swap request
       await dm.send(JSON.stringify({
@@ -341,7 +347,10 @@ async function runDemo() {
     await new Promise(resolve => setTimeout(resolve, 5000));
     
     // Request swap from Server Agent
-    const serverAgentAddress = process.env.SERVER_AGENT_ADDRESS!;
+    const serverAgentAddress = new ethers.Wallet(process.env.SERVER_AGENT_PRIVATE_KEY!).address;
+    if (!serverAgentAddress) {
+      throw new Error('SERVER_AGENT_ADDRESS environment variable is not set.');
+    }
     await clientAgent.requestSwap(serverAgentAddress);
     
     // Keep the agent running

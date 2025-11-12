@@ -1,17 +1,11 @@
 // verifier/thirdParty.ts
-import { Mandate, addrFromCaip10 } from "../../core/mandate";
+import { Mandate, addrFromCaip10 } from "@quillai-network/mandates-core";
 import type { TypedDataDomain } from "ethers";
+import { swapV1, type SwapV1Core } from "@quillai-network/primitives";
 
-// Optional: your primitive guard (use your registry/zod later)
-export type SwapPayload = {
-  chainId: number; tokenIn: string; tokenOut: string;
-  amountIn: string; minOut: string; recipient: string; deadline: string;
-};
-export type SwapCore = { kind: "swap@1"; payload: SwapPayload };
-
-function isSwapCore(x: unknown): x is SwapCore {
+function isSwapCore(x: unknown): x is SwapV1Core {
   const o = x as any;
-  return o && o.kind === "swap@1" && o.payload && typeof o.payload.amountIn === "string";
+  return o && o.kind === swapV1.kind && o.payload && typeof o.payload.amountIn === "string";
 }
 
 type VerifyOptions = {
@@ -24,7 +18,7 @@ type VerifyOptions = {
   eip712ClientDomain?: TypedDataDomain;
   eip712ServerDomain?: TypedDataDomain;
   // (optional) primitive guard
-  primitive?: "swap@1";
+  primitive?: typeof swapV1.kind;
 };
 
 export function verifyMandateAsThirdParty(
@@ -55,7 +49,7 @@ export function verifyMandateAsThirdParty(
   }
 
   // 4) Optional primitive validation (example: swap@1)
-  if (opts.primitive === "swap@1") {
+  if (opts.primitive === swapV1.kind) {
     if (!isSwapCore(j.core)) throw new Error("unexpected core shape for swap@1");
     // add any business rules you want:
     if (j.core.payload.amountIn === "0") throw new Error("bad amountIn");
